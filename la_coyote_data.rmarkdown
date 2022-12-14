@@ -1,0 +1,37 @@
+---
+title: "look_at_data"
+author: "Jasmine Grewal"
+format: html
+editor: visual
+---
+
+```{r}
+#| label: loadlibrary
+
+library(tidyverse)
+```
+
+```{r}
+#|label: loaddata
+
+read.csv("data/C172.csv") -> C172_data |>
+  mutate(Indv_ID, lat, lon, GPSTime)
+read.csv("data/C173.csv") -> C173_data
+read.csv("data/C174.csv") -> C174_data
+read.csv("data/C175.csv") -> C175_data
+read.csv("data/C176.csv") -> C176_data
+read.csv("data/C177.csv") -> C177_data
+read.csv("data/C178.csv") -> C178_data
+read.csv("data/C131_C171.csv") -> C131_C171_data |>
+  mutate(
+```
+
+```{r}
+coyote_data <- rbind(C177_data,
+                     C178_data)
+
+?join
+
+coyote_data_summary <- summarize(
+```
+

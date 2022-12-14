@@ -1,0 +1,77 @@
+---
+title: "look_at_data"
+author: "Jasmine Grewal"
+format: html
+editor: visual
+---
+
+```{r}
+#| label: loadlibrary
+
+library(tidyverse)
+```
+
+```{r}
+#|label: loaddata
+
+?add_column
+
+read.csv("data/C172.csv") -> C172_data
+C172_summary <- C172_data |>
+  add_column(Indv_ID = "C172") |>
+  rename(dtUTC = "GPSTime") |>
+  summarise(Indv_ID, lat, lon, dtUTC)
+
+read.csv("data/C173.csv") -> C173_data
+C173_summary <- C173_data |>
+  add_column(Indv_ID = "C173") |>
+  rename(dtUTC = "GPSTime") |>
+  summarise(Indv_ID, lat, lon, dtUTC)
+
+read.csv("data/C174.csv") -> C174_data
+C174_summary <- C174_data |>
+  add_column(Indv_ID = "C174") |>
+  rename(dtUTC = "GPSTime") |>
+  summarise(Indv_ID, lat, lon, dtUTC)
+
+read.csv("data/C175.csv") -> C175_data
+C175_summary <- C175_data |>
+  add_column(Indv_ID = "C175") |>
+  rename(dtUTC = "GPSTime") |>
+  summarise(Indv_ID, lat, lon, dtUTC)
+
+read.csv("data/C176.csv") -> C176_data
+C176_summary <- C176_data |>
+  add_column(Indv_ID = "C176") |>
+  rename(dtUTC = "GPSTime") |>
+  summarise(Indv_ID, lat, lon, dtUTC)
+
+read.csv("data/C177.csv") -> C177_data
+C177_summary <- C177_data |>
+  add_column(Indv_ID = "C177") |>
+  rename(dtUTC = "GPSTime") |>
+  summarise(Indv_ID, lat, lon, dtUTC)
+
+read.csv("data/C178.csv") -> C178_data
+C178_summary <- C178_data |>
+  add_column(Indv_ID = "C178") |>
+  rename(dtUTC = "GPSTime") |>
+  summarise(Indv_ID, lat, lon, dtUTC)
+
+read.csv("data/C131_C171.csv") -> C131_C171_data
+C131_C171_summary <- C131_C171_data |>
+  summarise(Indv_ID, lat, lon, dtUTC)
+```
+
+```{r}
+coyote_data <- rbind(C131_C171_summary,
+                     C172_summary,
+                     C173_summary,
+                     C174_summary,
+                     C175_summary,
+                     C176_summary,
+                     C177_summary,
+                     C178_summary)
+
+coyote_data_summary <- 
+```
