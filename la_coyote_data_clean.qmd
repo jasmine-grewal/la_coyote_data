@@ -1,0 +1,184 @@
+---
+title: "la_coyote_data_clean"
+format: html
+editor: visual
+---
+
+```{r}
+#| label: load library
+
+library(tidyverse)
+```
+
+```{r}
+#| label: read in ecotone data
+
+read.csv("data/C172.csv") -> C172_data
+C172_summary <- C172_data |>
+  add_column(ID = "C172") |>
+  rename(dt = "GPSTime",
+         Latitude = 'lat',
+         Longitude = 'lon') |>
+  reframe(ID, Latitude, Longitude, dt)
+
+read.csv("data/C173.csv") -> C173_data
+C173_summary <- C173_data |>
+  add_column(ID = "C173") |>
+  rename(dt = "GPSTime",
+         Latitude = 'lat',
+         Longitude = 'lon') |>
+  reframe(ID, Latitude, Longitude, dt)
+
+read.csv("data/C174.csv") -> C174_data
+C174_summary <- C174_data |>
+  add_column(ID = "C174") |>
+  rename(dt = "GPSTime",
+         Latitude = 'lat',
+         Longitude = 'lon') |>
+  reframe(ID, Latitude, Longitude, dt)
+
+read.csv("data/C175.csv") -> C175_data
+C175_summary <- C175_data |>
+  add_column(ID = "C175") |>
+  rename(dt = "GPSTime",
+         Latitude = 'lat',
+         Longitude = 'lon') |>
+  reframe(ID, Latitude, Longitude, dt)
+
+read.csv("data/C176.csv") -> C176_data
+C176_summary <- C176_data |>
+  add_column(ID = "C176") |>
+  rename(dt = "GPSTime",
+         Latitude = 'lat',
+         Longitude = 'lon') |>
+  reframe(ID, Latitude, Longitude, dt)
+
+read.csv("data/C177.csv") -> C177_data
+C177_summary <- C177_data |>
+  add_column(ID = "C177") |>
+  rename(dt = "GPSTime",
+         Latitude = 'lat',
+         Longitude = 'lon') |>
+  reframe(ID, Latitude, Longitude, dt)
+
+read.csv("data/C178.csv") -> C178_data
+C178_summary <- C178_data |>
+  add_column(ID = "C178") |>
+  rename(dt = "GPSTime",
+         Latitude = 'lat',
+         Longitude = 'lon') |>
+  reframe(ID, Latitude, Longitude, dt)
+
+ecotone_data <- rbind(C172_summary,
+                     C173_summary,
+                     C174_summary,
+                     C175_summary,
+                     C176_summary,
+                     C177_summary,
+                     C178_summary)
+
+```
+
+```{r}
+#| label: pull hourly fixes for ecotone collars
+
+# convert dt column to a POSIXct object
+ecotone_data$dt <- as.POSIXct(ecotone_data$dt, format = "%Y-%m-%d %H:%M:%S")
+
+ecotone_data_hourly <- ecotone_data |>
+  group_by(ID, hour = cut(dt, "hour")) |>
+  slice(1) |>
+  ungroup()
+
+# Print the result
+#print(ecotone_data_hourly)
+
+# write csv
+
+#write.csv(ecotone_data_hourly, 'ecotone_data_hourly')
+```
+
+```{r}
+library(sf)
+library(lubridate)
+library(parallel)
+library(dplyr)
+library(ggplot2)
+library(maps)
+
+
+## read in kyle's funciton from GitHub
+#devtools::source_url("https://raw.githubusercontent.com/kyledougherty/CougR/main/a_LoCoH_HR_Function.R")
+
+## or, read in locally:
+source("a_LoCoH_HR2.R") ## I manipulated this FYI  
+
+##read in data, obviously change to your own path
+#read.csv("data/ecotone_data_hourly") -> ecotone_data
+## format data for LoCoH function
+data <- ecotone_data_hourly %>% 
+  drop_na() %>% 
+  rename(y  = `Latitude`, 
+         x  = `Longitude`) %>% 
+  #mutate(dt = mdy_hm(as.character(dt), tz = 'UTC')) %>% 
+  st_as_sf(coords = c("x", "y"), 
+           crs = 4326, remove = FALSE) %>% 
+  st_transform(26911) %>%
+  group_by(ID) %>%
+  group_split()
+
+
+## run function
+start <- Sys.time()
+Home_Range_Estimate <- lapply(data, 
+                              a_LoCoH_HR2, 
+                              id = "ID",
+                              date = "dt",
+                              iso_levels = c(0.95)
+)
+Sys.time() - start
+## Time difference of 35.16428 secs
+
+#plot(Home_Range_Estimate$geometry)
+
+#get rid of rows with insufficient data
+#Home_Range_Estimate = Home_Range_Estimate[-c(15)]
+
+Home_Range_Estimate %>% bind_rows() -> HR_df_fallcaps
+
+
+####Plotting home ranges#####
+#convert to sf object
+HR_sf_fallcaps <- st_as_sf(HR_df_fallcaps)
+
+ggplot()+
+  geom_polygon(data = cal, aes(x = long, y = lat, group = group)) +
+  coord_fixed(1.3) +
+  geom_sf(data = HR_sf_fallcaps)
+
+cal <- map_data("county", regions = c("california,los angeles", "california,ventura"))
+```
+
+```{r}
+read.csv("data/C131_C171.csv") -> C131_C171_data
+C131_C171 <- C131_C171_data |>
+  rename(ID = "Indv_ID",
+            Latitude = "lat",
+            Longitude = "lon",
+            dt = "dtUTC") |>
+  reframe(ID, Latitude, Longitude, dt)
+
+C131_C171$dt <- as.POSIXct(C131_C171$dt, format = "%Y-%m-%d %H:%M:%S")
+
+C131_C171_hourly <- C131_C171 |>
+  group_by(ID, hour = cut(dt, "hour")) |>
+  slice(1) |>
+  ungroup()
+```
+
+```{r}
+df_list <- C131_C171_hourly |>
+  group_split(ID) |>
+  set_names(unique(C131_C171$ID))
+```
+
