@@ -12,8 +12,7 @@ library(sf)
 library(lubridate)
 library(parallel)
 library(dplyr)
-library(ggplot2)
-library(maps)
+library(mapview)
 ```
 
 ```{r}
@@ -84,7 +83,9 @@ ecotone_data <- rbind(C172_summary,
                      C178_summary)
 
 ```
+
 Ecotone filter
+
 ```{r}
 #| label: pull hourly fixes for ecotone collars
 
@@ -96,7 +97,9 @@ ecotone_hourly <- ecotone_data |>
   ungroup()
 
 ```
+
 Ecotone HR
+
 ```{r}
 
 source("a_LoCoH_HR2.R") 
@@ -127,7 +130,9 @@ HR_sf_fallcaps <- st_as_sf(HR_df_fallcaps)
 mapview(zcol = "ID", HR_sf_fallcaps, legend = F, cex = 3)
 
 ```
+
 Read in 131-171 hourly
+
 ```{r}
 read.csv("data/C131_C171.csv") -> C131_C171_data
 C131_C171 <- C131_C171_data |>
@@ -137,7 +142,7 @@ C131_C171 <- C131_C171_data |>
             dt = "dtUTC") |>
   reframe(ID, Latitude, Longitude, dt)
 
-C131_C171$dt <- as.POSIXct(C131_C171$dt, format = "%Y-%m-%d %H:%M:%S")
+C131_C171$dt <- as.POSIXct(C131_C171$dt, format = "%m/%d/%Y %H:%M")
 
 C131_C171_hourly <- C131_C171 |>
   group_by(ID, hour = cut(dt, "hour")) |>
@@ -150,7 +155,9 @@ df_list <- C131_C171_hourly |>
   group_split(ID) |>
   set_names(unique(C131_C171$ID))
 ```
+
 four hourly filtered
+
 ```{r}
 #| label: 4 hour fix rate at 2
 
@@ -162,7 +169,9 @@ four_hourly_values <- c(2, 6, 10, 14, 18, 22)
 four_hourly_filtered <- four_hourly[hour(four_hourly$dt) %in% four_hourly_values, ]
 
 ```
+
 four hourly HR2
+
 ```{r}
 
 data2 <- four_hourly_filtered %>% 
@@ -190,13 +199,17 @@ HR_sf_fallcaps2 <- st_as_sf(HR_df_fallcaps2)
 
 mapview(zcol = "ID", HR_sf_fallcaps2, legend = F, cex = 3)
 ```
-hourly AM 
+
+hourly AM
+
 ```{r}
 
 hourly_AM <- C131_C171_hourly |>
   filter(ID %in% c("C131", "C132", "C133"))
 ```
+
 hourly AM HR3
+
 ```{r}
 
 data3 <- hourly_AM %>% 
@@ -224,7 +237,9 @@ HR_sf_fallcaps3 <- st_as_sf(HR_df_fallcaps3)
 
 mapview(zcol = "ID", HR_sf_fallcaps3, legend = F, cex = 3)
 ```
+
 eight hourly filtered
+
 ```{r}
 
 eight_hourly <- C131_C171_hourly |>
@@ -236,7 +251,9 @@ eight_hourly_filtered <-
   eight_hourly[hour(eight_hourly$dt) %in% eight_hourly_values, ]
   
 ```
+
 eight hourly HR4
+
 ```{r}
 
 data4 <- eight_hourly_filtered %>% 
@@ -264,10 +281,12 @@ HR_sf_fallcaps4 <- st_as_sf(HR_df_fallcaps4)
 
 mapview(zcol = "ID", HR_sf_fallcaps4, legend = F, cex = 3)
 ```
+
 eight hourly7 filtered
+
 ```{r}
 
-eight_hourly7 <- C131_C171_hourly7 |>
+eight_hourly7 <- C131_C171_hourly |>
   filter(ID %in% c("C138", "C139"))
 
 eight_hourly7_values <- c(7, 15, 23)
@@ -276,7 +295,9 @@ eight_hourly7_filtered <-
   eight_hourly7[hour(eight_hourly7$dt) %in% eight_hourly7_values, ]
   
 ```
+
 eight hourly7 HR5
+
 ```{r}
 
 data5 <- eight_hourly7_filtered %>% 
@@ -305,14 +326,100 @@ HR_sf_fallcaps5 <- st_as_sf(HR_df_fallcaps5)
 mapview(zcol = "ID", HR_sf_fallcaps5, legend = F, cex = 3)
 ```
 
+C169 filter
+
+```{r}
+
+C169 <- C131_C171_hourly |>
+  filter(ID == "C169")
+
+C169_4_hourly_values <- c(0, 4, 8, 12, 16, 20)
+
+C169_hourly_filtered <- C169[hour(C169$dt) %in% C169_4_hourly_values, ]
+
+```
+
+C169 HR6
+
+```{r}
+
+data6 <- C169_hourly_filtered %>% 
+  drop_na() %>% 
+  rename(y  = `Latitude`, 
+         x  = `Longitude`) %>% 
+  st_as_sf(coords = c("x", "y"), 
+           crs = 4326, remove = FALSE) %>% 
+  st_transform(26911) %>%
+  group_by(ID) %>%
+  group_split()
+
+start <- Sys.time()
+Home_Range_Estimate6 <- lapply(data6, 
+                              a_LoCoH_HR2, 
+                              id = "ID",
+                              date = "dt",
+                              iso_levels = c(0.95)
+)
+Sys.time() - start
+
+Home_Range_Estimate6 %>% bind_rows() -> HR_df_fallcaps6
+
+HR_sf_fallcaps6 <- st_as_sf(HR_df_fallcaps6)
+
+mapview(zcol = "ID", HR_sf_fallcaps6, legend = F, cex = 3)
+```
+
+left
+
+```{r}
+left <- C131_C171_hourly |>
+  filter(ID %in% c("C144", "C145", "C146", "C147", "C149", "C151", "C153", "C154", "C155", "C156", "C157", "C161"))
+```
+
+left HR7
+
+```{r}
+
+data7 <- left %>% 
+  drop_na() %>% 
+  rename(y  = `Latitude`, 
+         x  = `Longitude`) %>% 
+  st_as_sf(coords = c("x", "y"), 
+           crs = 4326, remove = FALSE) %>% 
+  st_transform(26911) %>%
+  group_by(ID) %>%
+  group_split()
+
+start <- Sys.time()
+Home_Range_Estimate7 <- lapply(data7, 
+                              a_LoCoH_HR2, 
+                              id = "ID",
+                              date = "dt",
+                              iso_levels = c(0.95)
+)
+Sys.time() - start
+
+Home_Range_Estimate7 %>% bind_rows() -> HR_df_fallcaps7
+
+HR_sf_fallcaps7 <- st_as_sf(HR_df_fallcaps7)
+
+mapview(zcol = "ID", HR_sf_fallcaps7, legend = F, cex = 3)
+```
+
 ```{r}
 
 HR_sf_fallcaps_all <- rbind(HR_sf_fallcaps,
                             HR_sf_fallcaps2,
                             HR_sf_fallcaps3,
-                            HR_sf_fallcaps4)
+                            HR_sf_fallcaps4,
+                            HR_sf_fallcaps5,
+                            HR_sf_fallcaps6,
+                            HR_sf_fallcaps7)
 
-mapview(zcol = "ID", HR_sf_fallcaps_all, legend = F, cex = 3)
+mapview(zcol = "ID",
+        HR_sf_fallcaps_all,
+        HR_legend = F,
+        cex = 3)
 
-
+mapshot(my_map, "my_map")
 ```

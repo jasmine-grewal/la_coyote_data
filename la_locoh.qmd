@@ -10,7 +10,6 @@ editor: visual
 
 library(tidyverse)
 library(sf)
-#install.packages("mapview")
 library(mapview)
 ```
 
