@@ -1,0 +1,433 @@
+---
+title: "look_at_data"
+author: "Jasmine Grewal"
+format: html
+editor: visual
+---
+
+```{r}
+#| label: loadlibrary
+
+library(tidyverse)
+library(sf)
+library(mapview)
+```
+
+```{r}
+#|label: loaddata
+
+read.csv("data/C148.csv") -> C148_data
+C148_summary <-  C148_data |>
+  add_column(ID = "C173") |>
+  rename(dt = "Date") |>
+  summarise(ID, Latitude, Longitude, dt)
+
+read.csv("data/C172.csv") -> C172_data
+C172_summary <- C172_data |>
+  add_column(ID = "C172") |>
+  rename(dt = "GPSTime",
+         Latitude = 'lat',
+         Longitude = 'lon') |>
+  reframe(ID, Latitude, Longitude, dt)
+
+read.csv("data/C173.csv") -> C173_data
+C173_summary <- C173_data |>
+  add_column(ID = "C173") |>
+  rename(dt = "GPSTime",
+         Latitude = 'lat',
+         Longitude = 'lon') |>
+  reframe(ID, Latitude, Longitude, dt)
+
+read.csv("data/C174.csv") -> C174_data
+C174_summary <- C174_data |>
+  add_column(ID = "C174") |>
+  rename(dt = "GPSTime",
+         Latitude = 'lat',
+         Longitude = 'lon') |>
+  reframe(ID, Latitude, Longitude, dt)
+
+read.csv("data/C175.csv") -> C175_data
+C175_summary <- C175_data |>
+  add_column(ID = "C175") |>
+  rename(dt = "GPSTime",
+         Latitude = 'lat',
+         Longitude = 'lon') |>
+  reframe(ID, Latitude, Longitude, dt)
+
+read.csv("data/C176.csv") -> C176_data
+C176_summary <- C176_data |>
+  add_column(ID = "C176") |>
+  rename(dt = "GPSTime",
+         Latitude = 'lat',
+         Longitude = 'lon') |>
+  reframe(ID, Latitude, Longitude, dt)
+
+read.csv("data/C177.csv") -> C177_data
+C177_summary <- C177_data |>
+  add_column(ID = "C177") |>
+  rename(dt = "GPSTime",
+         Latitude = 'lat',
+         Longitude = 'lon') |>
+  reframe(ID, Latitude, Longitude, dt)
+
+read.csv("data/C178.csv") -> C178_data
+C178_summary <- C178_data |>
+  add_column(ID = "C178") |>
+  rename(dt = "GPSTime",
+         Latitude = 'lat',
+         Longitude = 'lon') |>
+  reframe(ID, Latitude, Longitude, dt)
+
+read.csv("data/C131_C171.csv") -> C131_C171_data
+C131_C171_summary <- C131_C171_data |>
+  rename(ID = "Indv_ID",
+         dt = "dtUTC",
+         Latitude = 'lat',
+         Longitude = 'lon') |>
+  reframe(ID, Latitude, Longitude, dt)
+```
+
+```{r}
+coyote_data <- rbind(C131_C171_summary,
+                     C148_summary,
+                     C172_summary,
+                     C173_summary,
+                     C174_summary,
+                     C175_summary,
+                     C176_summary,
+                     C177_summary,
+                     C178_summary)
+
+coyote_data_summary <- coyote_data |>
+  group_by(ID) |>
+  summarise(ID, total_fixes = n())
+
+```
+
+```{r}
+data <- coyote_data 
+
+data <- data[!is.na(data$Longitude) & !is.na(data$Latitude),]
+
+data_sf <- st_as_sf(data, coords = c("Longitude", "Latitude"), crs = 4326)
+
+mapview(zcol = "Indv_ID", data_sf, legend = F, cex = 3)
+```
+
+```{r}
+data <- coyote_data |>
+filter(Indv_ID == c("C133", "C139", "C145", "C146", "C151","C153", "C154", "C155", "C156", "C158", "C164", "C176"))
+data <- data[!is.na(data$Longitude) & !is.na(data$Latitude),]
+
+data_sf <- st_as_sf(data, coords = c("Longitude", "Latitude"), crs = 4326)
+
+mapview(zcol = "Indv_ID", data_sf, legend = F, cex = 3)
+```
+
+```{r}
+data <- coyote_data |>
+filter(Indv_ID == c("C131", "C136", "C138", "C141", "C142", "C143", "C147", "C163", "C166",  "C168", "C174"))
+data <- data[!is.na(data$Longitude) & !is.na(data$Latitude),]
+
+data_sf <- st_as_sf(data, coords = c("Longitude", "Latitude"), crs = 4326)
+
+mapview(zcol = "Indv_ID", data_sf, legend = F, cex = 3)
+```
+
+```{r}
+data <- coyote_data |>
+filter(Indv_ID == c("C132", "C135", "C140", "C148", "C157","C161", "C162", "C169", "C171", "C173", "C177", "C178"))
+  
+data <- data[!is.na(data$Longitude) & !is.na(data$Latitude),]
+
+data_sf <- st_as_sf(data, coords = c("Longitude", "Latitude"), crs = 4326)
+
+mapview(zcol = "Indv_ID", data_sf, legend = F, cex = 3)
+```
+
+```{r}
+data <- coyote_data |>
+filter(Indv_ID == c("C134", "C144", "C149", "C156", "C159","C160", "C165", "C167", "C170", "C172", "C175"))
+data <- data[!is.na(data$Longitude) & !is.na(data$Latitude),]
+
+data_sf <- st_as_sf(data, coords = c("Longitude", "Latitude"), crs = 4326)
+
+mapview(zcol = "Indv_ID", data_sf, legend = F, cex = 3)
+```
+C131
+```{r}
+
+read.csv("data/C131_C171.csv") -> C131_C171_data
+C131_C171_summary <- C131_C171_data |>
+  rename(ID = "Indv_ID",
+         dt = "dtUTC",
+         Latitude = 'lat',
+         Longitude = 'lon') |>
+  reframe(ID, Latitude, Longitude, dt)
+
+C131_C171 <- C131_C171_summary |>
+filter(ID == "C134", "C135", "C136", "C140", "C141", "C142", "C143")
+C131_C171 <- C131_C171[!is.na(C131_C171$Longitude) & !is.na(C131_C171$Latitude),]
+
+C131_C171_sf <- st_as_sf(C131_C171, coords = c("Longitude", "Latitude"), crs = 4326)
+
+mapview(zcol = "ID", C131_C171_sf, legend = F, cex = 3)
+```
+
+```{r}
+data <- coyote_data |>
+filter(Indv_ID == c("C170", "C171", "C172", "C173", "C174","C175", "C176", "C177"))
+data <- data[!is.na(data$Longitude) & !is.na(data$Latitude),]
+
+data_sf <- st_as_sf(data, coords = c("Longitude", "Latitude"), crs = 4326)
+
+mapview(zcol = "Indv_ID", data_sf, legend = F, cex = 3)
+```
+C158
+```{r}
+
+C158 <- coyote_data |>
+filter(ID == "C158")
+C158 <- C158[!is.na(C158$Longitude) & !is.na(C158$Latitude),]
+
+C158_sf <- st_as_sf(data, coords = c("Longitude", "Latitude"), crs = 4326)
+
+mapview(zcol = "ID", C158_sf, legend = F, cex = 3)
+```
+C159
+```{r}
+
+C159 <- coyote_data |>
+filter(ID == "C159")
+C159 <- C159[!is.na(C159$Longitude) & !is.na(C159$Latitude),]
+
+C159_sf <- st_as_sf(C159, coords = c("Longitude", "Latitude"), crs = 4326)
+
+mapview(zcol = "ID", C159_sf, legend = F, cex = 3)
+```
+C160
+```{r}
+
+C160 <- coyote_data |>
+filter(ID == "C160")
+C160 <- C160[!is.na(C160$Longitude) & !is.na(C160$Latitude),]
+
+C160_sf <- st_as_sf(C160, coords = c("Longitude", "Latitude"), crs = 4326)
+
+mapview(zcol = "ID", C160_sf, legend = F, cex = 3)
+```
+C161
+```{r}
+
+left <- C131_C171_summary |>
+filter(ID %in% c("C144", "C145", "C146", "C147", "C149", "C151", "C153", "C154", "C155", "C156", "C157", "C161"))
+
+left <- left[!is.na(left$Longitude) & !is.na(left$Latitude),]
+
+left_sf <- st_as_sf(left, coords = c("Longitude", "Latitude"), crs = 4326)
+
+mapview(zcol = "ID", left_sf, legend = F, cex = 3)
+```
+C162
+```{r}
+
+C162 <- coyote_data |>
+filter(ID == "C162")
+C162 <- C162[!is.na(C162$Longitude) & !is.na(C162$Latitude),]
+
+C162_sf <- st_as_sf(C162, coords = c("Longitude", "Latitude"), crs = 4326)
+
+mapview(zcol = "ID", C162_sf, legend = F, cex = 3)
+```
+C163
+```{r}
+
+C163 <- coyote_data |>
+filter(ID == "C163")
+C163 <- C163[!is.na(C163$Longitude) & !is.na(C163$Latitude),]
+
+C163_sf <- st_as_sf(C163, coords = c("Longitude", "Latitude"), crs = 4326)
+
+mapview(zcol = "ID", C163_sf, legend = F, cex = 3)
+```
+C165
+```{r}
+
+C165 <- coyote_data |>
+filter(ID == "C165")
+C165 <- C165[!is.na(C165$Longitude) & !is.na(C165$Latitude),]
+
+C165_sf <- st_as_sf(C165, coords = c("Longitude", "Latitude"), crs = 4326)
+
+mapview(zcol = "ID", C165_sf, legend = F, cex = 3)
+```
+C166
+```{r}
+
+C166 <- coyote_data |>
+filter(ID == "C166")
+C166 <- C166[!is.na(C166$Longitude) & !is.na(C166$Latitude),]
+
+C166_sf <- st_as_sf(C166, coords = c("Longitude", "Latitude"), crs = 4326)
+
+mapview(zcol = "ID", C166_sf, legend = F, cex = 3)
+```
+C167
+```{r}
+
+C167 <- coyote_data |>
+filter(ID == "C167")
+C167 <- C167[!is.na(C167$Longitude) & !is.na(C167$Latitude),]
+
+C167_sf <- st_as_sf(C167, coords = c("Longitude", "Latitude"), crs = 4326)
+
+mapview(zcol = "ID", C167_sf, legend = F, cex = 3)
+```
+C168
+```{r}
+
+C168 <- coyote_data |>
+filter(ID == "C168")
+C168 <- C168[!is.na(C168$Longitude) & !is.na(C168$Latitude),]
+
+C168_sf <- st_as_sf(C168, coords = c("Longitude", "Latitude"), crs = 4326)
+
+mapview(zcol = "ID", C168_sf, legend = F, cex = 3)
+```
+C170
+```{r}
+
+C170 <- coyote_data |>
+filter(ID == "C170")
+C170 <- C170[!is.na(C170$Longitude) & !is.na(C170$Latitude),]
+
+C170_sf <- st_as_sf(C170, coords = c("Longitude", "Latitude"), crs = 4326)
+
+mapview(zcol = "ID", C170_sf, legend = F, cex = 3)
+```
+C171
+```{r}
+
+C171 <- coyote_data |>
+filter(ID == "C171")
+C171 <- C171[!is.na(C171$Longitude) & !is.na(C171$Latitude),]
+
+C171_sf <- st_as_sf(C171, coords = c("Longitude", "Latitude"), crs = 4326)
+
+mapview(zcol = "ID", C171_sf, legend = F, cex = 3)
+```
+C172
+```{r}
+read.csv("data/C172.csv") -> C172_data
+C172_summary <- C172_data |>
+  add_column(ID = "C172") |>
+  rename(dt = "GPSTime",
+         Latitude = 'lat',
+         Longitude = 'lon') |>
+  reframe(ID, Latitude, Longitude, dt)
+
+C172 <- C172_summary |>
+filter(ID == "C172")
+C172 <- C172[!is.na(C172$Longitude) & !is.na(C172$Latitude),]
+
+C172_sf <- st_as_sf(C172, coords = c("Longitude", "Latitude"), crs = 4326)
+
+mapview(zcol = "ID", C172_sf, legend = F, cex = 3)
+```
+C173
+```{r}
+read.csv("data/C173.csv") -> C173_data
+C173_summary <- C173_data |>
+  add_column(ID = "C173") |>
+  rename(dt = "GPSTime",
+         Latitude = 'lat',
+         Longitude = 'lon') |>
+  reframe(ID, Latitude, Longitude, dt)
+
+C173 <- C173_summary |>
+filter(ID == "C173")
+C173 <- C173[!is.na(C173$Longitude) & !is.na(C173$Latitude),]
+
+C173_sf <- st_as_sf(C173, coords = c("Longitude", "Latitude"), crs = 4326)
+
+mapview(zcol = "ID", C173_sf, legend = F, cex = 3)
+```
+C174
+```{r}
+read.csv("data/C174.csv") -> C174_data
+C174_summary <- C174_data |>
+  add_column(ID = "C174") |>
+  rename(dt = "GPSTime",
+         Latitude = 'lat',
+         Longitude = 'lon') |>
+  reframe(ID, Latitude, Longitude, dt)
+
+C174 <- C174_summary |>
+filter(ID == "C174")
+C174 <- C174[!is.na(C174$Longitude) & !is.na(C174$Latitude),]
+
+C174_sf <- st_as_sf(C174, coords = c("Longitude", "Latitude"), crs = 4326)
+
+mapview(zcol = "ID", C174_sf, legend = F, cex = 3)
+```
+C175
+```{r}
+read.csv("data/C175.csv") -> C175_data
+C175_summary <- C175_data |>
+  add_column(ID = "C175") |>
+  rename(dt = "GPSTime",
+         Latitude = 'lat',
+         Longitude = 'lon') |>
+  reframe(ID, Latitude, Longitude, dt)
+
+C175 <- C175_summary |>
+filter(ID == "C175")
+C175 <- C175[!is.na(C175$Longitude) & !is.na(C175$Latitude),]
+
+C175_sf <- st_as_sf(C175, coords = c("Longitude", "Latitude"), crs = 4326)
+
+mapview(zcol = "ID", C175_sf, legend = F, cex = 3)
+```
+C176
+```{r}
+C176 <- coyote_data |>
+filter(ID == "C176")
+C176 <- C176[!is.na(C176$Longitude) & !is.na(C176$Latitude),]
+
+C176_sf <- st_as_sf(C176, coords = c("Longitude", "Latitude"), crs = 4326)
+
+mapview(zcol = "ID", C176_sf, legend = F, cex = 3)
+```
+C177
+```{r}
+C177 <- coyote_data |>
+filter(ID == "C177")
+C177 <- C177[!is.na(C177$Longitude) & !is.na(C177$Latitude),]
+
+C177_sf <- st_as_sf(C177, coords = c("Longitude", "Latitude"), crs = 4326)
+
+mapview(zcol = "ID", C177_sf, legend = F, cex = 3)
+```
+C178
+```{r}
+C178 <- coyote_data |>
+filter(ID == "C178")
+C178 <- C178[!is.na(C178$Longitude) & !is.na(C178$Latitude),]
+
+C178_sf <- st_as_sf(C178, coords = c("Longitude", "Latitude"), crs = 4326)
+
+mapview(zcol = "ID", C178_sf, legend = F, cex = 3)
+```
+
+
+```{r}
+data <- coyote_data |>
+filter(ID == c("C172", "C173", "C174", "C175", "C176","C177", "C178"))
+data <- data[!is.na(data$Longitude) & !is.na(data$Latitude),]
+
+data_sf <- st_as_sf(data, coords = c("Longitude", "Latitude"), crs = 4326)
+
+mapview(zcol = "ID", data_sf, legend = F, cex = 3)
+```
+```
+

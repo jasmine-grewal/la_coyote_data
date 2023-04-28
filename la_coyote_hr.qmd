@@ -1,0 +1,442 @@
+---
+title: "la_coyote_data_clean"
+format: html
+editor: visual
+---
+#load libraries
+```{r}
+#| label: load library
+
+library(tidyverse)
+library(sf)
+library(lubridate)
+library(parallel)
+library(dplyr)
+library(mapview)
+```
+
+#Read in Ecotone data
+```{r}
+#| label: read in ecotone data
+
+read.csv("data/C172.csv") -> C172_data
+C172_summary <- C172_data |>
+  add_column(ID = "C172") |>
+  rename(dt = "GPSTime",
+         Latitude = 'lat',
+         Longitude = 'lon') |>
+  reframe(ID, Latitude, Longitude, dt)
+
+read.csv("data/C173.csv") -> C173_data
+C173_summary <- C173_data |>
+  add_column(ID = "C173") |>
+  rename(dt = "GPSTime",
+         Latitude = 'lat',
+         Longitude = 'lon') |>
+  reframe(ID, Latitude, Longitude, dt)
+
+read.csv("data/C174.csv") -> C174_data
+C174_summary <- C174_data |>
+  add_column(ID = "C174") |>
+  rename(dt = "GPSTime",
+         Latitude = 'lat',
+         Longitude = 'lon') |>
+  reframe(ID, Latitude, Longitude, dt)
+
+read.csv("data/C175.csv") -> C175_data
+C175_summary <- C175_data |>
+  add_column(ID = "C175") |>
+  rename(dt = "GPSTime",
+         Latitude = 'lat',
+         Longitude = 'lon') |>
+  reframe(ID, Latitude, Longitude, dt)
+
+read.csv("data/C176.csv") -> C176_data
+C176_summary <- C176_data |>
+  add_column(ID = "C176") |>
+  rename(dt = "GPSTime",
+         Latitude = 'lat',
+         Longitude = 'lon') |>
+  reframe(ID, Latitude, Longitude, dt)
+
+read.csv("data/C177.csv") -> C177_data
+C177_summary <- C177_data |>
+  add_column(ID = "C177") |>
+  rename(dt = "GPSTime",
+         Latitude = 'lat',
+         Longitude = 'lon') |>
+  reframe(ID, Latitude, Longitude, dt)
+
+read.csv("data/C178.csv") -> C178_data
+C178_summary <- C178_data |>
+  add_column(ID = "C178") |>
+  rename(dt = "GPSTime",
+         Latitude = 'lat',
+         Longitude = 'lon') |>
+  reframe(ID, Latitude, Longitude, dt)
+
+ecotone_data <- rbind(C172_summary,
+                     C173_summary,
+                     C174_summary,
+                     C175_summary,
+                     C176_summary,
+                     C177_summary,
+                     C178_summary)
+
+```
+
+#Ecotone filter
+```{r}
+#| label: pull hourly fixes for ecotone collars
+
+ecotone_data$dt <- as.POSIXct(ecotone_data$dt, format = "%m/%d/%Y %H:%M")
+
+ecotone_hourly <- ecotone_data |>
+  group_by(ID, hour = cut(dt, "hour")) |>
+  slice(1) |>
+  ungroup()
+
+```
+
+##Ecotone HR
+```{r}
+
+source("a_LoCoH_HR2.R") 
+
+data <- ecotone_hourly %>% 
+  drop_na() %>% 
+  rename(y  = `Latitude`, 
+         x  = `Longitude`) %>% 
+  st_as_sf(coords = c("x", "y"), 
+           crs = 4326, remove = FALSE) %>% 
+  st_transform(26911) %>%
+  group_by(ID) %>%
+  group_split()
+
+start <- Sys.time()
+Home_Range_Estimate <- lapply(data, 
+                              a_LoCoH_HR2, 
+                              id = "ID",
+                              date = "dt",
+                              iso_levels = c(0.95)
+)
+Sys.time() - start
+
+Home_Range_Estimate %>% bind_rows() -> HR_df_fallcaps
+
+HR_sf_fallcaps <- st_as_sf(HR_df_fallcaps)
+
+mapview(zcol = "ID", HR_sf_fallcaps, legend = F, cex = 3)
+
+```
+
+#Read in 131-171 hourly
+```{r}
+read.csv("data/C131_C171.csv") -> C131_C171_data
+C131_C171 <- C131_C171_data |>
+  rename(ID = "Indv_ID",
+            Latitude = "lat",
+            Longitude = "lon",
+            dt = "dtUTC") |>
+  reframe(ID, Latitude, Longitude, dt)
+
+C131_C171$dt <- as.POSIXct(C131_C171$dt, format = "%m/%d/%Y %H:%M")
+
+C131_C171_hourly <- C131_C171 |>
+  group_by(ID, hour = cut(dt, "hour")) |>
+  slice(1) |>
+  ungroup()
+```
+
+```{r}
+df_list <- C131_C171_hourly |>
+  group_split(ID) |>
+  set_names(unique(C131_C171$ID))
+```
+
+##four hourly filtered
+```{r}
+#| label: 4 hour fix rate at 2
+
+four_hourly <- C131_C171_hourly |>
+  filter(ID %in% c("C158", "C159", "C160", "C162", "C163", "C165", "C166", "C167", "C168", "C170", "C171")) |>
+
+four_hourly_values <- c(2, 6, 10, 14, 18, 22)
+
+four_hourly_filtered <- four_hourly[hour(four_hourly$dt) %in% four_hourly_values, ]
+
+```
+
+###four hourly HR2
+```{r}
+
+data2 <- four_hourly_filtered %>% 
+  drop_na() %>% 
+  rename(y  = `Latitude`, 
+         x  = `Longitude`) %>% 
+  st_as_sf(coords = c("x", "y"), 
+           crs = 4326, remove = FALSE) %>% 
+  st_transform(26911) %>%
+  group_by(ID) %>%
+  group_split()
+
+start <- Sys.time()
+Home_Range_Estimate2 <- lapply(data2, 
+                              a_LoCoH_HR2, 
+                              id = "ID",
+                              date = "dt",
+                              iso_levels = c(0.95)
+)
+Sys.time() - start
+
+Home_Range_Estimate2 %>% bind_rows() -> HR_df_fallcaps2
+
+HR_sf_fallcaps2 <- st_as_sf(HR_df_fallcaps2)
+
+mapview(zcol = "ID", HR_sf_fallcaps2, legend = F, cex = 3)
+```
+
+##hourly AM
+```{r}
+
+hourly_AM <- C131_C171_hourly |>
+  filter(ID %in% c("C131", "C132", "C133"))
+```
+
+###hourly AM HR3
+```{r}
+
+data3 <- hourly_AM %>% 
+  drop_na() %>% 
+  rename(y  = `Latitude`, 
+         x  = `Longitude`) %>% 
+  st_as_sf(coords = c("x", "y"), 
+           crs = 4326, remove = FALSE) %>% 
+  st_transform(26911) %>%
+  group_by(ID) %>%
+  group_split()
+
+start <- Sys.time()
+Home_Range_Estimate3 <- lapply(data3, 
+                              a_LoCoH_HR2, 
+                              id = "ID",
+                              date = "dt",
+                              iso_levels = c(0.95)
+)
+Sys.time() - start
+
+Home_Range_Estimate3 %>% bind_rows() -> HR_df_fallcaps3
+
+HR_sf_fallcaps3 <- st_as_sf(HR_df_fallcaps3)
+
+mapview(zcol = "ID", HR_sf_fallcaps3, legend = F, cex = 3)
+```
+
+##eight hourly filtered
+```{r}
+
+eight_hourly <- C131_C171_hourly |>
+  filter(ID %in% c("C134", "C135", "C136", "C140", "C141", "C142", "C143"))
+
+eight_hourly_values <- c(0, 8, 16)
+
+eight_hourly_filtered <-
+  eight_hourly[hour(eight_hourly$dt) %in% eight_hourly_values, ]
+  
+```
+
+###eight hourly HR4
+```{r}
+
+data4 <- eight_hourly_filtered %>% 
+  drop_na() %>% 
+  rename(y  = `Latitude`, 
+         x  = `Longitude`) %>% 
+  st_as_sf(coords = c("x", "y"), 
+           crs = 4326, remove = FALSE) %>% 
+  st_transform(26911) %>%
+  group_by(ID) %>%
+  group_split()
+
+start <- Sys.time()
+Home_Range_Estimate4 <- lapply(data4, 
+                              a_LoCoH_HR2, 
+                              id = "ID",
+                              date = "dt",
+                              iso_levels = c(0.95)
+)
+Sys.time() - start
+
+Home_Range_Estimate4 %>% bind_rows() -> HR_df_fallcaps4
+
+HR_sf_fallcaps4 <- st_as_sf(HR_df_fallcaps4)
+
+mapview(zcol = "ID", HR_sf_fallcaps4, legend = F, cex = 3)
+```
+
+##eight hourly7 filtered
+```{r}
+
+eight_hourly7 <- C131_C171_hourly |>
+  filter(ID %in% c("C138", "C139"))
+
+eight_hourly7_values <- c(7, 15, 23)
+
+eight_hourly7_filtered <-
+  eight_hourly7[hour(eight_hourly7$dt) %in% eight_hourly7_values, ]
+  
+```
+
+###eight hourly7 HR5
+```{r}
+
+data5 <- eight_hourly7_filtered %>% 
+  drop_na() %>% 
+  rename(y  = `Latitude`, 
+         x  = `Longitude`) %>% 
+  st_as_sf(coords = c("x", "y"), 
+           crs = 4326, remove = FALSE) %>% 
+  st_transform(26911) %>%
+  group_by(ID) %>%
+  group_split()
+
+start <- Sys.time()
+Home_Range_Estimate5 <- lapply(data5, 
+                              a_LoCoH_HR2, 
+                              id = "ID",
+                              date = "dt",
+                              iso_levels = c(0.95)
+)
+Sys.time() - start
+
+Home_Range_Estimate5 %>% bind_rows() -> HR_df_fallcaps5
+
+HR_sf_fallcaps5 <- st_as_sf(HR_df_fallcaps5)
+
+mapview(zcol = "ID", HR_sf_fallcaps5, legend = F, cex = 3)
+```
+
+##C169 filter
+```{r}
+
+C169 <- C131_C171_hourly |>
+  filter(ID == "C169")
+
+C169_4_hourly_values <- c(0, 4, 8, 12, 16, 20)
+
+C169_hourly_filtered <- C169[hour(C169$dt) %in% C169_4_hourly_values, ]
+
+```
+
+###C169 HR6
+```{r}
+
+data6 <- C169_hourly_filtered %>% 
+  drop_na() %>% 
+  rename(y  = `Latitude`, 
+         x  = `Longitude`) %>% 
+  st_as_sf(coords = c("x", "y"), 
+           crs = 4326, remove = FALSE) %>% 
+  st_transform(26911) %>%
+  group_by(ID) %>%
+  group_split()
+
+start <- Sys.time()
+Home_Range_Estimate6 <- lapply(data6, 
+                              a_LoCoH_HR2, 
+                              id = "ID",
+                              date = "dt",
+                              iso_levels = c(0.95)
+)
+Sys.time() - start
+
+Home_Range_Estimate6 %>% bind_rows() -> HR_df_fallcaps6
+
+HR_sf_fallcaps6 <- st_as_sf(HR_df_fallcaps6)
+
+mapview(zcol = "ID", HR_sf_fallcaps6, legend = F, cex = 3)
+```
+
+##left
+```{r}
+left <- C131_C171_hourly |>
+  filter(ID %in% c("C144", "C145", "C146", "C147", "C149", "C151", "C153", "C154", "C155", "C156", "C157", "C161"))
+```
+
+###left HR7
+```{r}
+
+data7 <- left %>% 
+  drop_na() %>% 
+  rename(y  = `Latitude`, 
+         x  = `Longitude`) %>% 
+  st_as_sf(coords = c("x", "y"), 
+           crs = 4326, remove = FALSE) %>% 
+  st_transform(26911) %>%
+  group_by(ID) %>%
+  group_split()
+
+start <- Sys.time()
+Home_Range_Estimate7 <- lapply(data7, 
+                              a_LoCoH_HR2, 
+                              id = "ID",
+                              date = "dt",
+                              iso_levels = c(0.95)
+)
+Sys.time() - start
+
+Home_Range_Estimate7 %>% bind_rows() -> HR_df_fallcaps7
+
+HR_sf_fallcaps7 <- st_as_sf(HR_df_fallcaps7)
+
+mapview(zcol = "ID", HR_sf_fallcaps7, legend = F, cex = 3)
+```
+
+#All Home Ranges
+```{r}
+
+HR_sf_fallcaps_all <- rbind(HR_sf_fallcaps,
+                            HR_sf_fallcaps2,
+                            HR_sf_fallcaps3,
+                            HR_sf_fallcaps4,
+                            HR_sf_fallcaps5,
+                            HR_sf_fallcaps6,
+                            HR_sf_fallcaps7)
+
+mapview(zcol = "ID",
+        HR_sf_fallcaps_all,
+        HR_legend = F,
+        cex = 3)
+
+mapshot(my_map, "my_map")
+```
+
+#LA HR summary
+```{r}
+
+summ <- rbind(ecotone_hourly,
+              four_hourly_filtered,
+              hourly_AM,
+              eight_hourly_filtered,
+              eight_hourly7_filtered,
+              C169_hourly_filtered,
+              left) |>
+  drop_na(dt) |>
+  group_by(ID) |>
+  summarize(n_points = length(ID),
+            first_day = min(dt),
+            last_day = max(dt))
+  
+summ2 <- merge(summ, HR_sf_fallcaps_all, by = "ID")|>
+  select(ID, Area, n_points, first_day, last_day) |>
+  mutate(total_days = ceiling(difftime(last_day, first_day, units = "days")))
+
+# install.packages("writexl")
+library(writexl)
+
+LA_HR_summary <- data.frame(summ2)
+
+write_xlsx(summ2, "LA_HR_summary.xlsx")
+
+```
+
